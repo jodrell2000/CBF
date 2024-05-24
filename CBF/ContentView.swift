@@ -5,32 +5,44 @@
 //  Created by Adam Reynolds on 20/05/2024.
 //
 
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 struct ContentView: View {
     @Environment(\.modelContext) private var context
-    
+
     @Query(sort: \Producer.name, order: .forward) var producers: [Producer]
-    
-    @State private var sectionStates: [String: Bool] = [:]
-    
+
+    @State var sectionStates: [String: Bool] = [:]
+    @State var searchQuery: String = "" {
+        didSet {
+            updateSectionStatesForSearch()
+        }
+    }
+
     var body: some View {
         NavigationView {
-            List {
-                ForEach(groupedProducts.keys.sorted(), id: \.self) { bar in
-                    Section(header: SectionHeaderView(title: bar, isExpanded: sectionStates[bar] ?? false)
-                        .onTapGesture {
-                            toggleSection(for: bar)
-                        }) {
-                        if sectionStates[bar] ?? false {
-                            if let producersForBar = groupedProducts[bar], sectionStates[bar] ?? false {
-                                ForEach(producersForBar.keys.sorted(), id: \.self) { producerName in
-                                    Section(header: Text(producerName)) {
-                                        if let products = groupedProducts[bar]?[producerName] {
-                                            ForEach(products, id: \.self) { product in
-                                                NavigationLink(destination: BeerDetailView(product: product)) {
-                                                    BeerRow(product: product)
+            VStack {
+                // Search bar
+                TextField("Search", text: $searchQuery)
+                    .padding()
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+
+                List {
+                    ForEach(filteredGroupedProducts.keys.sorted(), id: \.self) { bar in
+                        Section(header: SectionHeaderView(title: bar, isExpanded: sectionStates[bar] ?? false)
+                            .onTapGesture {
+                                toggleSection(for: bar)
+                            }) {
+                            if sectionStates[bar] ?? false {
+                                if let producersForBar = filteredGroupedProducts[bar] {
+                                    ForEach(producersForBar.keys.sorted(), id: \.self) { producerName in
+                                        Section(header: Text(producerName)) {
+                                            if let products = filteredGroupedProducts[bar]?[producerName] {
+                                                ForEach(products, id: \.self) { product in
+                                                    NavigationLink(destination: BeerDetailView(product: product)) {
+                                                        BeerRow(product: product)
+                                                    }
                                                 }
                                             }
                                         }
@@ -40,10 +52,10 @@ struct ContentView: View {
                         }
                     }
                 }
-            }
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    toolbarTitle
+                .toolbar {
+                    ToolbarItem(placement: .principal) {
+                        toolbarTitle
+                    }
                 }
             }
         }
@@ -58,24 +70,14 @@ struct ContentView: View {
             }
         }
         .onAppear {
-            // Set default state for each section to false (closed)
-            for producer in producers {
-                let producerName = producer.name
-                sectionStates[producerName] = false
-            }
-        }
-        .onAppear {
-            // Set default state for each section to false (closed)
-            for bar in groupedProducts.keys {
-                sectionStates[bar] = false
-            }
+            initializeSectionStates()
         }
     }
 
-    
-    private var groupedProducts: [String: [String: [Product]]] {
+    // Ensure groupedProducts is accessible in the main view file
+    var groupedProducts: [String: [String: [Product]]] {
         var grouped: [String: [String: [Product]]] = [:]
-        
+
         for producer in producers {
             let producerName = producer.name
             for product in producer.products {
@@ -89,37 +91,32 @@ struct ContentView: View {
                 grouped[bar]?[producerName]?.append(product)
             }
         }
-        
+
         return grouped
     }
-    
-    private func toggleSection(for producerName: String) {
-        sectionStates[producerName]?.toggle()
-    }
-    
-    private func updateSectionStates() {
-        // Initialize section states if not already set
-        for producer in producers {
-            let producerName = producer.name
-            if sectionStates[producerName] == nil {
-                sectionStates[producerName] = false // Or true if you want sections to start expanded
+
+    var filteredGroupedProducts: [String: [String: [Product]]] {
+        if searchQuery.isEmpty {
+            return groupedProducts
+        } else {
+            var filtered = [String: [String: [Product]]]()
+            for (bar, producersForBar) in groupedProducts {
+                var filteredProducers = [String: [Product]]()
+                for (producerName, products) in producersForBar {
+                    let filteredProducts = products.filter { product in
+                        product.name.localizedCaseInsensitiveContains(searchQuery) ||
+                        producerName.localizedCaseInsensitiveContains(searchQuery)
+                    }
+                    if !filteredProducts.isEmpty {
+                        filteredProducers[producerName] = filteredProducts
+                    }
+                }
+                if !filteredProducers.isEmpty {
+                    filtered[bar] = filteredProducers
+                }
             }
+            return filtered
         }
-    }
-}
-
-
-struct SectionHeaderView: View {
-    let title: String
-    let isExpanded: Bool
-    
-    var body: some View {
-        HStack {
-            Text(title).font(.headline)
-            Spacer()
-            Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-        }
-        .contentShape(Rectangle()) // Make the entire header tappable
     }
 }
 

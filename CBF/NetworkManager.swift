@@ -38,6 +38,7 @@ struct NetworkManager {
                 
                 let festival = BeerFestival.updateOrCreate(from: apiFestival, using: modelContext)
                 modelContext.insert(festival)
+                print("Data load complete")
             } catch {
                 print("Failed to load data from \(url): \(error)")
             }
