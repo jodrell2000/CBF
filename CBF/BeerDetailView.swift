@@ -7,34 +7,24 @@
 
 import SwiftUI
 
-import SwiftUI
-
 struct BeerDetailView: View {
-    @Binding var isSelected: Bool
-    @Binding var isFavourite: Bool
-    var producer: Producer
-    var product: Product
-    
-    init(isSelected: Binding<Bool>, isFavourite: Binding<Bool>, producer: Producer, product: Product) {
-        self._isSelected = isSelected
-        self._isFavourite = isFavourite
-        self.producer = producer
-        self.product = product
-    }
+    @Bindable var product: Product
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(producer.name)
+            Text(product.producer?.name ?? "Producer")
                 .font(.largeTitle)
                 .padding(.bottom, 10)
             
-            if let yearFounded = producer.year_founded {
+            if let yearFounded = product.producer?.yearFounded {
                 Text("Year Founded: \(yearFounded)")
             }
-            if let notes = producer.notes {
+            
+            if let notes = product.producer?.notes {
                 Text("Notes: \(notes)")
             }
-            if let location = producer.location {
+            
+            if let location = product.producer?.location {
                 Text("Location: \(location)")
             }
             
@@ -47,19 +37,28 @@ struct BeerDetailView: View {
             if let style = product.style {
                 Text("Style: \(style)")
             }
+            
             Text("ABV: \(product.abv)")
+            
             if let dispense = product.dispense {
                 Text("Dispense: \(dispense)")
             }
+            
             if let notes = product.notes {
                 Text("Notes: \(notes)")
             }
-            if !product.allergens.allergenNames.isEmpty {
-                Text("Allergens: \(product.allergens.allergenNames.joined(separator: ", "))")
+            
+            if let allergens = product.allergens {
+                if !allergens.allergenNames.isEmpty {
+                    Text("Allergens: \(allergens.allergenNames.joined(separator: ", "))")
+                } else {
+                    Text("Allergens: None")
+                }
             } else {
                 Text("Allergens: None")
             }
-            Text("Status: \(product.status_text)")
+            
+            Text("Status: \(product.statusText)")
             
             Spacer()
             
@@ -72,27 +71,19 @@ struct BeerDetailView: View {
 
                 Spacer()
                 Button(action: {
-                    isFavourite.toggle()
-                    UserDefaults.standard.set(isFavourite, forKey: "favourite_\(product.id)")
-                    // Explicitly update the binding value to force UI refresh
-                    isFavourite = UserDefaults.standard.bool(forKey: "favourite_\(product.id)")
-                    print("isFavourite toggled:", isFavourite)
+                    product.isFavourite.toggle()
                 }) {
-                    Image(systemName: isFavourite ? "star.fill" : "star")
+                    Image(systemName: product.isFavourite ? "star.fill" : "star")
                         .foregroundColor(.yellow)
                 }
             }
             
-            Toggle("Tried", isOn: $isSelected)
+            Toggle("Tried", isOn: $product.isSelected)
                 .padding(.top, 20)
             
             Spacer()
        }
         .padding()
         .navigationTitle("Beer Details")
-        .onAppear {
-            // Load the initial state from UserDefaults
-            isFavourite = UserDefaults.standard.bool(forKey: "favourite_\(product.id)")
-        }
     }
 }

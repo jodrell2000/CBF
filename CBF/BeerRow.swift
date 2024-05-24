@@ -8,20 +8,10 @@
 import SwiftUI
 
 struct BeerRow: View {
-    @Binding var isSelected: Bool
-    var product: Product
-    var producer: Producer
-    @State private var isActive: Bool = false
-    @State private var isFavourite: Bool
+     @State private var isActive: Bool = false
     
-    init(isSelected: Binding<Bool>, product: Product, producer: Producer) {
-        self._isSelected = isSelected
-        self.product = product
-        self.producer = producer
-        // Initialize isFavourite based on UserDefaults
-        _isFavourite = State(initialValue: UserDefaults.standard.bool(forKey: "favourite_\(product.id)"))
-    }
-
+    @Bindable var product: Product
+    
     var body: some View {
         // Invisible button to handle row tap
         Button(action: {
@@ -30,12 +20,9 @@ struct BeerRow: View {
             HStack {
                 // Star button
                 Button(action: {
-                    // Handle favourite logic here
-                    isFavourite.toggle()
-                    print("isFavourite toggled:", isFavourite)
-                    UserDefaults.standard.set(isFavourite, forKey: "favourite_\(product.id)")
+                    product.isFavourite.toggle()
                 }) {
-                    Image(systemName: isFavourite ? "star.fill" : "star")
+                    Image(systemName: product.isFavourite ? "star.fill" : "star")
                         .foregroundColor(.yellow) // Customize the star color
                 }
                 .padding(.trailing, 10) // Adjust the spacing as needed
@@ -45,7 +32,7 @@ struct BeerRow: View {
                     HStack {
                         Text(product.name)
                             .font(.headline)
-                        Text("(\(product.status_text))")
+                        Text("(\(product.statusText))")
                             .font(.subheadline)
                             .foregroundColor(.gray)
                     }
@@ -53,19 +40,14 @@ struct BeerRow: View {
                         .font(.subheadline)
                 }
                 Spacer()
-                Toggle("", isOn: $isSelected)
+                Toggle("", isOn: $product.isSelected)
                     .labelsHidden()
             }
             .contentShape(Rectangle()) // Define tappable area for the entire row
         }
         .background(
             NavigationLink(
-                destination: BeerDetailView(
-                    isSelected: $isSelected,
-                    isFavourite: $isFavourite,
-                    producer: producer,
-                    product: product
-                ),
+                destination: BeerDetailView(product: product),
                 tag: true, // Set a tag to true
                 selection: Binding<Bool?>(
                     get: { isActive ? true : nil },
