@@ -179,6 +179,8 @@ fileprivate extension Product {
 
         if let existingProduct = try? context.fetch(existingProductFetch).first {
             existingProduct.name = apiProduct.name
+            existingProduct.style = apiProduct.style ?? ""
+            existingProduct.notes = apiProduct.notes ?? ""
             existingProduct.allergens = apiProduct.allergens
             existingProduct.bar = apiProduct.bar ?? ""
             existingProduct.abv = apiProduct.abv ?? ""
@@ -187,7 +189,7 @@ fileprivate extension Product {
             
             return existingProduct
         } else {
-            return Product.init(id: apiProduct.id, name: apiProduct.name, allergens: apiProduct.allergens, bar: apiProduct.bar ?? "", abv: apiProduct.abv ?? "", category: apiProduct.category, statusText: apiProduct.statusText, isSelected: false, isFavourite: false)
+            return Product.init(id: apiProduct.id, name: apiProduct.name, notes: apiProduct.notes ?? "", allergens: apiProduct.allergens, bar: apiProduct.bar ?? "", style: apiProduct.style ?? "", abv: apiProduct.abv ?? "", category: apiProduct.category, statusText: apiProduct.statusText, dispense: apiProduct.dispense ?? "", isSelected: false, isFavourite: false)
         }
     }
 }

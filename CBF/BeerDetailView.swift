@@ -34,6 +34,8 @@ struct BeerDetailView: View {
                 .font(.title)
                 .padding(.bottom, 5)
             
+            Text(product.style ?? "wibble")
+            
             if let style = product.style {
                 Text("Style: \(style)")
             }
